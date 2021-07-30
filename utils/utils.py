@@ -37,6 +37,12 @@ def clean_config(config):
     return config
 
 
+def simple_loader(model_dir, device):
+    model = Multi2OIE(bert_config="bert-base-multilingual-cased").to(device)
+    model.load_state_dict(torch.load(model_dir))
+    model.zero_grad()
+    return model
+
 def get_models(bert_config,
                pred_n_labels=3,
                arg_n_labels=9,
