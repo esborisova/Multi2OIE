@@ -4,12 +4,88 @@ import torch
 import time
 from extract import extract_to_list
 from torch.utils.data import DataLoader
+from typing import Optional
 
-output_path = "results/epoch1_dev/step8000/carb_dev/"
-dev_gold = "evaluate/OIE2016_dev.txt"
+class RelationExtraction(): 
 
-model_path = "results/model-epoch1-step16000-score1.9768.bin"
+    def __init__(self, model_path: Optional[str] = None):
+        self._bert_config  = "bert-base-multilingual-cased"
+        self._binary = False
+        self._device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self._batch_size = 64
+        self._max_len=64
+        self._num_workers=4
+        self._args = {"bert_config": self._bert_config, "device": self._device, "binary": self._binary}
+        self._bert_model = self.prepare_model(model_path)
+        self._pin_memory = True
+    
 
+# Function for loading a model
+
+    def load_model(self, path):
+        model = utils.get_models(
+            bert_config = self._bert_config,
+            pred_n_labels=3,
+            arg_n_labels=9,
+            n_arg_heads=8,
+            n_arg_layers=4,
+            pos_emb_dim=64,
+            use_lstm=False,
+            device = self._device)
+
+        model.load_state_dict(torch.load(path))
+        model.zero_grad()
+        model.eval()
+
+        return model
+
+# Function for preparing a model. If the path is given, it loads the model. 
+# Otherwise, it creates a folder in the home directory. Then it dowloads the model, saves it to the specified location and loads it.
+
+    def prepare_model(self, model_path): 
+        if model_path is None:
+
+            import urllib.request
+            import os 
+            from pathlib import Path
+            import earthpy as et
+            
+            new_path = os.path.join(et.io.HOME, "Multi2OIE_model")
+            if (not Path(new_path).exists()):
+                os.mkdir(new_path)
+
+            model_path = os.path.join(new_path, "model.bin")
+            urllib.request.urlretrieve(
+                url='https://sciencedata.dk//shared/81ee2688645634814152e3965e74b7f7?download', 
+                filename =  model_path
+                )
+
+        return self.load_model(path = model_path)
+
+    # Function for preparing the dataset
+
+    def prepare_data(self, sents):
+        dataset=EvalDataset(sents, self._max_len, self._bert_config)
+        test_loader = DataLoader( 
+            dataset,
+            self._batch_size,
+            self._num_workers,
+            pin_memory=self._pin_memory
+            )
+        return test_loader
+
+
+    # Function for extracting relations from a given dataset
+ 
+    def extract_relations(self, text):
+        start = time.time()
+        prepared_sent = self.prepare_data(sents = text)
+        extractions = extract_to_list(self._args, self._bert_model, prepared_sent)
+        print("TIME: ", time.time() - start)
+        return extractions
+
+
+# Testing 
 
 test_sents = [
     "Lasse er en dreng på 26 år.",
@@ -31,43 +107,12 @@ test_sents = [
     "En av Belgiens mest framträdande virusexperter har flyttats med sin familj till skyddat boende efter hot från en beväpnad högerextremist.",
 ]
 
-batch_size = 64
 
-test_loader = DataLoader(
-    dataset=EvalDataset(
-        test_sents, max_len=64, tokenizer_config="bert-base-multilingual-cased"
-    ),
-    batch_size=batch_size,
-    num_workers=4,
-    pin_memory=True,
-)
+relations = RelationExtraction()
 
-bert_config = "bert-base-multilingual-cased"
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-binary = False
+final_result = relations.extract_relations(test_sents)
 
-model = utils.get_models(
-    bert_config=bert_config,
-    pred_n_labels=3,
-    arg_n_labels=9,
-    n_arg_heads=8,
-    n_arg_layers=4,
-    pos_emb_dim=64,
-    use_lstm=False,
-    device=device,
-)
+print(final_result ["sentence"])
+print(final_result ["extraction_3"])
 
-model.load_state_dict(torch.load(model_path))
-model.zero_grad()
-model.eval()
 
-args = {"bert_config": bert_config, "device": device, "binary": binary}
-
-start = time.time()
-extractions = extract_to_list(args, model, test_loader)
-print("TIME: ", time.time() - start)
-
-extractions["sentence"]
-extractions["extraction_3"]
-# test_results = do_eval(args.save_path, args.test_gold_path)
-# utils.print_results("TEST RESULT", test_results, ["F1  ", "PREC", "REC ", "AUC "])
