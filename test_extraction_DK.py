@@ -42,7 +42,7 @@ class RelationExtraction():
 # Function for preparing a model. If the path is given, it loads the model. 
 # Otherwise, it creates a folder in the home directory. Then it dowloads the model, saves it to the specified location and loads it.
 
-    def prepare_model(self, model_path): 
+    def _prepare_model(self, model_path=None): 
 
         if model_path is None:            
             if not DEFAULT_MODEL_DIR.exists():
