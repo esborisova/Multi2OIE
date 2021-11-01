@@ -22,7 +22,7 @@ class RelationExtraction():
 
 # Function for loading a model
 
-    def load_model(self, path):
+    def _load_model(self, path):
         model = utils.get_models(
             bert_config = self._bert_config,
             pred_n_labels=3,
