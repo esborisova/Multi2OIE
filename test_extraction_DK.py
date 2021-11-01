@@ -4,7 +4,7 @@ import torch
 import time
 from extract import extract_to_list
 from torch.utils.data import DataLoader
-from typing import Optional
+from typing import Optional, List, Tuple
 DEFAULT_MODEL_DIR = Path(Path.home(), ".relation_model")
 class RelationExtraction(): 
 
