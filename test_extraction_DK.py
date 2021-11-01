@@ -43,24 +43,20 @@ class RelationExtraction():
 # Otherwise, it creates a folder in the home directory. Then it dowloads the model, saves it to the specified location and loads it.
 
     def prepare_model(self, model_path): 
-        if model_path is None:
 
-            import urllib.request
-            import os 
-            from pathlib import Path
-            import earthpy as et
-            
-            new_path = os.path.join(et.io.HOME, "Multi2OIE_model")
-            if (not Path(new_path).exists()):
-                os.mkdir(new_path)
+        if model_path is None:            
+            if not DEFAULT_MODEL_DIR.exists():
+                DEFAULT_MODEL_DIR.mkdir()
 
-            model_path = os.path.join(new_path, "model.bin")
+            model_path = DEFAULT_MODEL_DIR / "relation_model_v01.bin"
+            if model_path.exists():
+                return self.load_model(path = model_path)
             urllib.request.urlretrieve(
                 url='https://sciencedata.dk//shared/81ee2688645634814152e3965e74b7f7?download', 
                 filename =  model_path
                 )
 
-        return self.load_model(path = model_path)
+       return self.load_model(path = model_path)
 
     # Function for preparing the dataset
 
