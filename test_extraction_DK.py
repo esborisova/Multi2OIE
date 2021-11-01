@@ -77,11 +77,13 @@ class RelationExtraction():
 
     # Function for extracting relations from a given dataset
  
-    def extract_relations(self, text):
-        start = time.time()
+    def extract_relations(self, text: List[str], verbose: bool = False) -> List[Tuple]:
+        if verbose:
+            start = time.time()
         prepared_sent = self.prepare_data(sents = text)
         extractions = extract_to_list(self._args, self._bert_model, prepared_sent)
-        print("TIME: ", time.time() - start)
+        if verbose:
+            print("TIME: ", time.time() - start)
         return extractions
 
 
