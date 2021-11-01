@@ -60,7 +60,7 @@ class RelationExtraction():
 
     # Function for preparing the dataset
 
-    def prepare_data(self, sents):
+    def _prepare_data(self, sents: List[str]):
         dataset=EvalDataset(sents, self._max_len, self._bert_config)
         test_loader = DataLoader( 
             dataset,
