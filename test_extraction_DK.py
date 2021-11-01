@@ -8,16 +8,16 @@ from typing import Optional
 
 class RelationExtraction(): 
 
-    def __init__(self, model_path: Optional[str] = None):
+    def __init__(self, model_path: Optional[str] = None, batch_size: int = 64, max_len: int = 64, num_workers: int = 4, pin_memory: bool = True):
         self._bert_config  = "bert-base-multilingual-cased"
         self._binary = False
         self._device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self._batch_size = 64
-        self._max_len=64
-        self._num_workers=4
+        self._batch_size = batch_size
+        self._max_len= max_len
+        self._num_workers= num_workers
         self._args = {"bert_config": self._bert_config, "device": self._device, "binary": self._binary}
         self._bert_model = self.prepare_model(model_path)
-        self._pin_memory = True
+        self._pin_memory = pin_memory
     
 
 # Function for loading a model
