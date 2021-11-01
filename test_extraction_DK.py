@@ -5,7 +5,7 @@ import time
 from extract import extract_to_list
 from torch.utils.data import DataLoader
 from typing import Optional
-
+DEFAULT_MODEL_DIR = Path(Path.home(), ".relation_model")
 class RelationExtraction(): 
 
     def __init__(self, model_path: Optional[str] = None, batch_size: int = 64, max_len: int = 64, num_workers: int = 4, pin_memory: bool = True):
