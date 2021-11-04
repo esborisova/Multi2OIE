@@ -1,7 +1,9 @@
 name: Make a python package
 on:
   push:
-    branches: [origin]
+    branches:
+    - '*'
+    - '!master'
     
 jobs:
   pytest:
