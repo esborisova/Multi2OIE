@@ -22,9 +22,5 @@ jobs:
         --user
     - name: Create a source distribution 
       run: >-
-        python -m
-        build
-        --sdist
-        --outdir dist/
-        .
+        python setup.py sdist
 
