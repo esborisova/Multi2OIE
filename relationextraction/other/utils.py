@@ -7,7 +7,7 @@ import pickle
 import pandas as pd
 import json
 import copy
-from model import Multi2OIE, BERTBiLSTM
+from ..model import Multi2OIE, BERTBiLSTM
 from transformers import get_linear_schedule_with_warmup, AdamW
 
 

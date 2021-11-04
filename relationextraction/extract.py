@@ -1,7 +1,7 @@
 import os
 import torch
 import numpy as np
-import utils.bio as bio
+from .other import bio 
 from transformers import BertTokenizer
 from tqdm import tqdm
 
