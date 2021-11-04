@@ -12,7 +12,7 @@ A Python library for extracting knowledge triplets from a text document.
 
 ##### using  'pip' command,
 ~~~~
-# pip install -e ...
+pip install -e ...
 ~~~~
 
 ## Usage
