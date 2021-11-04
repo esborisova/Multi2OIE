@@ -2,7 +2,7 @@
 
 A Python library for extracting knowledge triplets from a text document.
 
-## Installation
+## :wrench: Installation
 
 ### Prerequisites
 
@@ -10,12 +10,12 @@ A Python library for extracting knowledge triplets from a text document.
 
 - CUDA 10.0 or above
 
-##### using  'pip' command,
+##### using  'pip' command
 ~~~~
 pip install -e ...
 ~~~~
 
-## Usage
+## :woman_technologist: Usage
 
 ```python
 
