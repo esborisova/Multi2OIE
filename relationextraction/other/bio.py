@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from utils import utils
+from . import utils
 
 pred_tag2idx = {
     'P-B': 0, 'P-I': 1, 'O': 2
