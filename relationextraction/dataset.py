@@ -2,9 +2,10 @@ import torch
 import numpy as np
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
-from utils import utils
+from .other.bio import pred_tag2idx, arg_tag2idx
+from .other import utils
 from transformers import BertTokenizer
-from utils.bio import pred_tag2idx, arg_tag2idx
+
 
 
 def load_data(

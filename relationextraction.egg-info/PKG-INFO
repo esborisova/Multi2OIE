@@ -1,3 +1,22 @@
+Metadata-Version: 2.1
+Name: relationextraction
+Version: 0.0.1
+Summary: A library for extracting relations within a text
+Home-page: https://github.com/HLasse/Multi2OIE
+Author: Lasse Hansen
+Author-email: lasseh0310@gmail.com
+License: MIT
+Keywords: NLP,knowledge graphs,relation extraction,triplets
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: Windoiws 10
+Classifier: Environment :: GPU :: NVIDIA CUDA :: 10.0
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Science/Research
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
 # RelationExtraction
 
 A Python library for extracting knowledge triplets from a text document.
@@ -12,7 +31,7 @@ A Python library for extracting knowledge triplets from a text document.
 
 ##### using  'pip' command
 ~~~~
-pip install git+https://github.com/esborisova/RelationExtraction.git@relation_extraction_class
+pip install -e ...
 ~~~~
 
 ## :woman_technologist: Usage
@@ -52,6 +71,8 @@ final_result = relations.extract_relations(test_sents)
 
 print(final_result ["sentence"])
 print(final_result ["extraction_3"])
+
+
 
 
 
