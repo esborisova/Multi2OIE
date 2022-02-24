@@ -2,6 +2,7 @@ from relationextraction import KnowledgeTriplets
 
 import spacy
 from spacy.tokens import Doc, Span
+from spacy.language import Language
 
 from spacy_transformers.align import get_alignment
 
