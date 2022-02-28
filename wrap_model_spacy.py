@@ -11,7 +11,7 @@ from spacy_transformers import FullTransformerBatch
 from spacy_transformers.annotation_setters import null_annotation_setter
 from spacy_transformers.util import batch_by_length
 
-# from spacy_transformers.align import get_alignment
+from spacy_transformers.align import get_alignment
 from thinc.api import Model, PyTorchWrapper, chain, with_array
 from transformers import AutoTokenizer
 
@@ -20,8 +20,6 @@ from relationextraction.model import Multi2OIE
 from relationextraction.util import split_by_doc
 
 from relationextraction.util import wp2tokid, wp_span_to_token, install_extension
-
-from relationextraction.align import get_alignment
 
 # TODO:
 # Rewrite documentation
