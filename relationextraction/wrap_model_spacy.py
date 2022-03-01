@@ -3,35 +3,19 @@ from typing import Callable, Dict, Iterable, Iterator, List
 import spacy
 from spacy import Vocab
 from spacy.language import Language
-from spacy.ml import CharacterEmbed
 from spacy.pipeline import TrainablePipe
 from spacy.tokens import Doc
 from spacy.util import minibatch
-from spacy_transformers import FullTransformerBatch
-from spacy_transformers.annotation_setters import null_annotation_setter
-from spacy_transformers.util import batch_by_length
-
 from spacy_transformers.align import get_alignment
-from thinc.api import Model, PyTorchWrapper, chain, with_array
 from transformers import AutoTokenizer
 
-from relationextraction import KnowledgeTriplets
-from relationextraction.model import Multi2OIE
-from relationextraction.util import split_by_doc
-
-from relationextraction.util import wp2tokid, wp_span_to_token, install_extension
-
-# TODO:
-# Rewrite documentation
-# Rename things
-# Remove fluff
-# Handle empty strings
+from .knowledge_triplets import KnowledgeTriplets
+from .util import install_extension, wp2tokid, wp_span_to_token
 
 
 @Language.factory(
     "relation_extractor",
     default_config={
-        "max_batch_items": 50,
         "confidence_threshold": 1.0,
         "labels": [],
         "model_args": {
@@ -43,7 +27,6 @@ def make_relation_extractor(
     nlp: Language,
     name: str,
     confidence_threshold: float,
-    max_batch_items: int,
     labels: List,
     model_args: Dict,
 ):
@@ -52,30 +35,20 @@ def make_relation_extractor(
         name=name,
         confidence_threshold=confidence_threshold,
         labels=labels,
-        max_batch_items=max_batch_items,
         model_args=model_args,
     )
 
 
 class SpacyRelationExtractor(TrainablePipe):
-    """spaCy pipeline component that provides access to a transformer model from
-    the Huggingface transformers library. Usually you will connect subsequent
-    components to the shared transformer using the TransformerListener layer.
-    This works similarly to spaCy's Tok2Vec component and Tok2VecListener
-    sublayer.
-    The activations from the transformer are saved in the doc._.trf_data extension
-    attribute. You can also provide a callback to set additional annotations.
+    """spaCy pipeline component that adds a multilingual relation-extraction component.
+    The extractions are saved in the doc._.relation_triplets, ._.relation_head,
+    ._.relation_relation, and ._.relation_tail attributes.
     Args:
         vocab (Vocab): The Vocab object for the pipeline.
-        model (Model[List[Doc], FullTransformerBatch]): A thinc Model object wrapping
-            the transformer. Usually you will want to use the TransformerModel
-            layer for this.
-        set_extra_annotations (Callable[[List[Doc], FullTransformerBatch], None]): A
-            callback to set additional information onto the batch of `Doc` objects.
-            The doc._.{doc_extension_trf_data} attribute is set prior to calling the callback
-            as well as doc._.{doc_extension_prediction} and doc._.{doc_extension_prediction}_prob.
-            By default, no additional annotations are set.
-        labels (List[str]): A list of labels which the transformer model outputs, should be ordered.
+        confidence_threshold (float): A threshold for model confidence to filter uncertain relations by.
+        model_args (Dict): Keyword arguments for KnowledgeTriplets (e.g. batch_size, path)
+        name (str): spaCy internal
+        labels (List(str)): Required for TrainablePipe but unused. Leave as empty list (or don't)
     """
 
     def __init__(
@@ -84,17 +57,12 @@ class SpacyRelationExtractor(TrainablePipe):
         name: str,
         labels: List[str],
         confidence_threshold: float,
-        max_batch_items: int,  # Max size of padded batch
         model_args,
     ):
-        """Initialize the transformer component."""
         self.vocab = vocab
         self.model = KnowledgeTriplets(**model_args)
         self.tokenizer = AutoTokenizer.from_pretrained("bert-base-multilingual-cased")
         self.confidence_threshold = confidence_threshold
-        # if not isinstance(self.model, Model):
-        #     raise ValueError(f"Expected Thinc Model, got: {type(self.model)}")
-        self.cfg = {"max_batch_items": max_batch_items}
 
         [
             install_extension(ext)
@@ -108,13 +76,17 @@ class SpacyRelationExtractor(TrainablePipe):
         ]
 
     def set_annotations(self, docs: Iterable[Doc], predictions: Dict) -> None:
-        """Assign the extracted features to the Doc objects. By default, the
-        TransformerData object is written to the doc._.{doc_extension_trf_data} attribute. Your
-        set_extra_annotations callback is then called, if provided.
+        """Assign the extracted features to the Doc objects. Extractions below the
+        confidence threshold are filtered, wordpieces and spacy tokens
+        are aligned and then attributes are set .
         Args:
             docs (Iterable[Doc]): The documents to modify.
-            predictions: (FullTransformerBatch): A batch of activations.
+            predictions: (Dict): A batch of outputs from KnowledgeTriplets.extract_relations().
         """
+        # remove empty docs
+        docs = [doc for doc in docs if doc]
+        if len(docs) < 1:
+            return
         # get nested list of indices above confidence threshold
         filtered_indices = [
             [
@@ -146,7 +118,6 @@ class SpacyRelationExtractor(TrainablePipe):
             )
         ]
         for idx, (doc, data) in enumerate(zip(docs, extraction_spans)):
-
             setattr(doc._, "relation_triplets", data["triplet"])
             setattr(
                 doc._,
@@ -172,7 +143,8 @@ class SpacyRelationExtractor(TrainablePipe):
     def pipe(self, stream: Iterable[Doc], *, batch_size: int = 128) -> Iterator[Doc]:
         """Apply the pipe to a stream of documents. This usually happens under
         the hood when the nlp object is called on a text and all components are
-        applied to the Doc.
+        applied to the Doc. Batch size is controlled by `batch_size` when
+        instatiating the nlp.pipe object.
         stream (Iterable[Doc]): A stream of documents.
         batch_size (int): The number of documents to buffer.
         YIELDS (Doc): Processed documents in order.
@@ -182,25 +154,17 @@ class SpacyRelationExtractor(TrainablePipe):
             outer_batch = list(outer_batch)
             outer_batch_text = [doc.text for doc in outer_batch]
             self.set_annotations(outer_batch, self.predict(outer_batch_text))
-            # for indices in batch_by_length(outer_batch, self.cfg["max_batch_items"]):
-            #     subbatch = [outer_batch[i] for i in indices]
-            #     subbatch_texts = [subbatch_doc.text for subbatch_doc in subbatch]
-            #    self.set_annotations(subbatch, self.predict(subbatch_texts))
+
             yield from outer_batch
 
-    def predict(self, docs: Iterable[Doc]) -> FullTransformerBatch:
+    def predict(self, docs: Iterable[Doc]) -> Dict:
         """Apply the pipeline's model to a batch of docs, without modifying them.
         Returns the extracted features as the FullTransformerBatch dataclass.
         docs (Iterable[Doc]): The documents to predict.
-        RETURNS (FullTransformerBatch): The extracted features.
+        RETURNS (Dict): The extracted features.
         DOCS: https://spacy.io/api/transformer#predict
         """
-        if not any(len(doc) for doc in docs):
-            # Handle cases where there are no tokens in any docs.
-            activations = FullTransformerBatch.empty(len(docs))
-        else:
-            activations = self.model.extract_relations(docs)
-        return activations
+        return self.model.extract_relations(docs)
 
 
 if __name__ == "__main__":
@@ -218,15 +182,13 @@ if __name__ == "__main__":
         "En av Belgiens mest framträdande virusexperter har flyttats med sin familj till skyddat boende efter hot från en beväpnad högerextremist.",
     ]
 
-    config = {
-        "max_batch_items": 15,
-        "confidence_threshold": 1.0,
-    }
+    config = {"confidence_threshold": 1.0, "model_args": {"batch_size": 10}}
 
     # model = KnowledgeTriplets()
 
     nlp.add_pipe("relation_extractor", config=config)
 
     pipe = nlp.pipe(test_sents)
+
     for d in pipe:
         print(d.text, "\n", d._.relation_triplets)
