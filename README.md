@@ -12,7 +12,7 @@ A Python library for extracting knowledge triplets from a text document.
 
 ##### using  'pip' command
 ~~~~
-pip install git+https://github.com/esborisova/RelationExtraction.git@relation_extraction_class
+pip install git+https://github.com/HLasse/Multi2OIE
 ~~~~
 
 ## :woman_technologist: Usage
