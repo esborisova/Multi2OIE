@@ -16,5 +16,5 @@ from .other.utils import(
 )
 
 from .other.bio import pred_tag2idx, arg_tag2idx
-from .test_extraction_DK import KnowledgeTriplets
-
+from .knowledge_triplets import KnowledgeTriplets
+from .wrap_model_spacy import SpacyRelationExtractor

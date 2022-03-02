@@ -95,7 +95,7 @@ class KnowledgeTriplets:
     def _prepare_data(self, sents: List[str]):
         dataset = EvalDataset(sents, self._max_len, self._bert_config)
         test_loader = DataLoader(
-            dataset, self._batch_size, self._num_workers, pin_memory=self._pin_memory
+            dataset, batch_size=self._batch_size, num_workers=self._num_workers, pin_memory=self._pin_memory, shuffle=False
         )
         return test_loader
 
