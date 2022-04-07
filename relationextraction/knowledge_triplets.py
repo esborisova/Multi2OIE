@@ -102,6 +102,8 @@ class KnowledgeTriplets:
     def extract_relations(self, text: List[str], verbose: bool = False) -> List[Tuple]:
         if verbose:
             start = time.time()
+        if isinstance(text, str):
+            text = [text]
         prepared_sent = self._prepare_data(sents=text)
         extractions = extract_to_dict(self._args, self._bert_model, prepared_sent)
         if verbose:
